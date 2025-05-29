@@ -1,25 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// Lista inicial de produtos (antes era const products = [...])
-const initialProducts = [
-  { codigo: '001', descricao: 'Descrição do Produto A', preco: '10.00', quantidade: 50 },
-  { codigo: '002', descricao: 'Descrição do Produto B', preco: '25.00', quantidade: 30 },
-  { codigo: '003', descricao: 'Descrição do Produto C', preco: '15.00', quantidade: 20 },
-];
-
 function ProductList() {
-  const [searchCode, setSearchCode] = useState('');
-  const [products, setProducts] = useState(initialProducts); // Agora estado mutável
+  const [search, setSearch] = useState('');
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   const handleSearch = (e) => {
-    setSearchCode(e.target.value);
+    setSearch(e.target.value);
   };
 
-  const handleExcluir = (codigo) => {
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:8000/lista-estoque');
+      if (!response.ok) throw new Error(`Erro: ${response.status}`);
+      const data = await response.json();
+      setProducts(data);
+    } catch (error) {
+      console.error("Erro ao buscar produtos:", error);
+      alert("Erro ao carregar produtos. Verifique o backend e tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+
+    const handleFocus = () => fetchProducts();
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
+  const handleExcluir = async (id) => {
     if (window.confirm('Tem certeza que deseja excluir este produto?')) {
-      setProducts((prev) => prev.filter((p) => p.codigo !== codigo));
+      try {
+        const response = await fetch(`http://localhost:8000/lista-estoque/${id}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          setProducts((prev) => prev.filter((p) => p.id !== id));
+        } else {
+          const error = await response.json();
+          alert('Erro ao excluir produto: ' + (error.detail || response.statusText));
+        }
+      } catch (error) {
+        alert('Erro de rede ao tentar excluir produto.');
+      }
     }
   };
 
@@ -27,9 +60,8 @@ function ProductList() {
     navigate(-1);
   };
 
-  // Filtra produtos conforme o código digitado
   const filteredProducts = products.filter(product =>
-    product.codigo.includes(searchCode)
+    product.descricao.toLowerCase().includes(search.toLowerCase())
   );
 
   const containerStyle = {
@@ -37,7 +69,6 @@ function ProductList() {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    //background: 'linear-gradient(135deg, #6a11cb, #2575fc)',
     fontFamily: 'Arial, sans-serif',
     padding: '2rem'
   };
@@ -93,47 +124,49 @@ function ProductList() {
 
         <input
           type="text"
-          placeholder="Buscar por código"
-          value={searchCode}
+          placeholder="Buscar por descrição"
+          value={search}
           onChange={handleSearch}
           style={inputStyle}
         />
 
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={{ padding: '0.8rem', borderBottom: '2px solid #ddd', textAlign: 'left' }}>Código</th>
-              <th style={{ padding: '0.8rem', borderBottom: '2px solid #ddd', textAlign: 'left' }}>Descrição</th>
-              <th style={{ padding: '0.8rem', borderBottom: '2px solid #ddd', textAlign: 'left' }}>Preço</th>
-              <th style={{ padding: '0.8rem', borderBottom: '2px solid #ddd', textAlign: 'left' }}>Quantidade</th>
-              <th style={{ padding: '0.8rem', borderBottom: '2px solid #ddd', textAlign: 'left' }}>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredProducts.length > 0 ? (
-              filteredProducts.map((product, index) => (
-                <tr key={index}>
-                  <td style={{ padding: '1rem', borderBottom: '1px solid #ddd' }}>{product.codigo}</td>
-                  <td style={{ padding: '1rem', borderBottom: '1px solid #ddd' }}>{product.descricao}</td>
-                  <td style={{ padding: '1rem', borderBottom: '1px solid #ddd' }}>R$ {product.preco}</td>
-                  <td style={{ padding: '1rem', borderBottom: '1px solid #ddd' }}>{product.quantidade}</td>
-                  <td style={{ padding: '1rem', borderBottom: '1px solid #ddd' }}>
-                    <button
-                      style={deleteButtonStyle}
-                      onClick={() => handleExcluir(product.codigo)}
-                    >
-                      Excluir
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
+        {loading ? (
+          <p style={{ textAlign: 'center' }}>Carregando produtos...</p>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
               <tr>
-                <td colSpan="5" style={{ padding: '1rem', textAlign: 'center' }}>Nenhum produto encontrado.</td>
+                <th style={{ padding: '0.8rem', borderBottom: '2px solid #ddd', textAlign: 'left' }}>Descrição</th>
+                <th style={{ padding: '0.8rem', borderBottom: '2px solid #ddd', textAlign: 'left' }}>Preço</th>
+                <th style={{ padding: '0.8rem', borderBottom: '2px solid #ddd', textAlign: 'left' }}>Quantidade</th>
+                <th style={{ padding: '0.8rem', borderBottom: '2px solid #ddd', textAlign: 'left' }}>Ações</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map((product) => (
+                  <tr key={product.id}>
+                    <td style={{ padding: '1rem', borderBottom: '1px solid #ddd' }}>{product.descricao}</td>
+                    <td style={{ padding: '1rem', borderBottom: '1px solid #ddd' }}>R$ {product.valor_unitario.toFixed(2)}</td>
+                    <td style={{ padding: '1rem', borderBottom: '1px solid #ddd' }}>{product.quantidade_estoque}</td>
+                    <td style={{ padding: '1rem', borderBottom: '1px solid #ddd' }}>
+                      <button
+                        style={deleteButtonStyle}
+                        onClick={() => handleExcluir(product.id)}
+                      >
+                        Excluir
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" style={{ padding: '1rem', textAlign: 'center' }}>Nenhum produto encontrado.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
 
         <button type="button" onClick={handleReturn} style={returnButtonStyle}>
           Retornar
@@ -144,3 +177,6 @@ function ProductList() {
 }
 
 export default ProductList;
+
+
+

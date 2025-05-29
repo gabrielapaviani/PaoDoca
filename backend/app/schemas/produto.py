@@ -1,18 +1,15 @@
 from pydantic import BaseModel
 from datetime import date
-from typing import Optional
 
-class ProdutoBase(BaseModel):
+class ProdutoCreate(BaseModel):
     descricao: str
     quantidade_estoque: int
     valor_unitario: float
-    validade: Optional[date] = None
+    validade: date
 
-class ProdutoCreate(ProdutoBase):
-    pass
-
-class ProdutoOut(ProdutoBase):
+class ProdutoOut(ProdutoCreate):
     id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+

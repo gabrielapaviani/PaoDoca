@@ -9,7 +9,7 @@ app = FastAPI(title="Pão Doca API", version="1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -26,3 +26,4 @@ app.include_router(home.router, prefix="/home", tags=["Home"])
 @app.get("/")
 def read_root():
     return {"message": "API do sistema Pão Doca"}
+

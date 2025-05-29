@@ -14,3 +14,4 @@ class Funcionario(Base):
     funcao = Column(String, nullable=False)
     departamento = Column(String, nullable=False)
     data_admissao = Column(Date, nullable=False)
+

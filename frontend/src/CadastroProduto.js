@@ -19,16 +19,40 @@ function ProductForm() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Produto cadastrado:', product);
-    alert('Produto cadastrado com sucesso!');
-    setProduct({
-      codigo: '',
-      descricao: '',
-      preco: '',
-      quantidade: ''
-    });
+
+    const payload = {
+      descricao: product.descricao,
+      quantidade_estoque: parseInt(product.quantidade),
+      valor_unitario: parseFloat(product.preco),
+      validade: "2025-12-31" // valor fixo por enquanto
+    };
+
+    try {
+      const response = await fetch("http://localhost:8000/cadastro-produto", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        alert("Produto cadastrado com sucesso!");
+        setProduct({
+          codigo: '',
+          descricao: '',
+          preco: '',
+          quantidade: ''
+        });
+      } else {
+        const error = await response.json();
+        alert("Erro ao cadastrar produto: " + error.detail);
+      }
+    } catch (error) {
+      alert("Erro de rede ao tentar cadastrar produto.");
+    }
   };
 
   const handleReturn = () => {
@@ -40,7 +64,6 @@ function ProductForm() {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    //background: 'linear-gradient(135deg, #6a11cb, #2575fc)',
     fontFamily: 'Arial, sans-serif'
   };
 
@@ -129,3 +152,5 @@ function ProductForm() {
 }
 
 export default ProductForm;
+
+

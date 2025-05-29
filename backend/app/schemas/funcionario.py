@@ -15,8 +15,14 @@ class FuncionarioBase(BaseModel):
 class FuncionarioCreate(FuncionarioBase):
     pass
 
-class FuncionarioOut(FuncionarioBase):
+class FuncionarioOut(BaseModel):
     id: int
+    nome: str
+    cargo: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+
+
+

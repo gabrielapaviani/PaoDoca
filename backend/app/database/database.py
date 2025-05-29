@@ -2,14 +2,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# URL de conexão com SQL Server Express (Windows Authentication)
 SQLALCHEMY_DATABASE_URL = (
     "mssql+pyodbc://localhost\\SQLEXPRESS/PaoDoca?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
 )
 
-
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 Base = declarative_base()
 
 def get_db():
@@ -18,6 +17,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
 
 
 
